@@ -15,6 +15,16 @@ local TweenService = game:GetService("TweenService")
 local lastJumpTime = 0
 local jumpCooldown = 0.8125
 
+if _G.ScriptIsRunning then
+    game:GetService("StarterGui"):SetCore("SendNotification", {
+        Title = "Script Already Running",
+        Text = "The script is already executing. Please do not attempt to run it again.",
+        Duration = 5
+    })
+    return
+end
+_G.ScriptIsRunning = true
+
 -- // Settings Configuration \\
 local Settings = {
     Aimbot = {
@@ -1534,4 +1544,5 @@ Library:OnUnload(function()
     Settings.FOV.OutlineCircle:Remove()
     stopMousePreload()
     revertMap()
+	_G.ScriptIsRunning = false
 end)
