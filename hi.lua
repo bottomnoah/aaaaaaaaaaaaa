@@ -845,9 +845,9 @@ end
 
 -- // UI Setup \\
 local Window = Library:CreateWindow({
-    Name = "Apex.rocks",
+    Name = "Nullwave",
     Themeable = {
-        Info = "discord.gg/apexrocks"
+        Info = "discord.gg/kaotiksoftworks"
     }
 })
 
