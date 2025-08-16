@@ -15,6 +15,12 @@ local TweenService = game:GetService("TweenService")
 local lastJumpTime = 0
 local jumpCooldown = 0.8125
 
+game:GetService("StarterGui"):SetCore("SendNotification", {
+        Title = "This Script is currently Discontinued.",
+        Text = "Due to the Schlep situation We've **TEMPORARILY** discontinued this script.",
+        Duration = 5
+    })
+
 if _G.ScriptIsRunning then
     game:GetService("StarterGui"):SetCore("SendNotification", {
         Title = "Script Already Running",
