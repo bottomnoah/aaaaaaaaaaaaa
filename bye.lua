@@ -15,6 +15,12 @@ local TweenService = game:GetService("TweenService")
 local lastJumpTime = 0
 local jumpCooldown = 0.8125
 
+ game:GetService("StarterGui"):SetCore("SendNotification", {
+        Title = "Join the Server!",
+        Text = "dsc.gg/kaotiksoftworks",
+        Duration = 6
+    })
+
 if _G.ScriptIsRunning then
     game:GetService("StarterGui"):SetCore("SendNotification", {
         Title = "Script Already Running",
