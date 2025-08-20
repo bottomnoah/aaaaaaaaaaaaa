@@ -31,15 +31,13 @@ if _G.ScriptIsRunning then
 end
 _G.ScriptIsRunning = true
 
--- // Check for mousemoverel support \\
 local hasMouseMoveRel = type(mousemoverel) == "function"
 if not hasMouseMoveRel then
     game:GetService("StarterGui"):SetCore("SendNotification", {
-        Title = "Aimbot Disabled",
-        Text = "This executor does not support mousemoverel. Aimbot functionality is disabled.",
+        Title = "Aimbot Unavailable",
+        Text = "This executor does not support mousemoverel. Aimbot functionality is not available.",
         Duration = 6
     })
-    Settings.Aimbot.Enabled = false
 end
 
 -- // Settings Configuration \\
@@ -537,7 +535,7 @@ local function initializeVotekickRejoiner()
 end
 
 -- // UI Setup \\
-local Window = Library:CreateWindow({ Name = "Nullwave", Themeable = { Info = "discord.gg/kaotiksoftworks" } })
+local Window = Library:CreateWindow({ Name = "Nullwave", Themeable = { Info = "dsc.gg/kaotiksoftworks" } })
 local Tabs = { Main = Window:CreateTab({Name = "Main"}), Visuals = Window:CreateTab({Name = "Visuals"}), Player = Window:CreateTab({Name = "Player"}), Misc = Window:CreateTab({Name = "Misc"}) }
 
 -- Crosshair UI
@@ -552,60 +550,54 @@ CrosshairGroup:AddColorPicker({ Name = "Color", Flag = "CrosshairColor", Color =
 CrosshairGroup:AddSlider({ Name = "Transparency", Flag = "CrosshairTransparency", Value = Settings.Crosshair.Transparency, Min = 0, Max = 1, Rounding = 2, Callback = function(v) Settings.Crosshair.Transparency = v end })
 
 -- Aimbot UI
-local AimbotGroup = Tabs.Main:CreateSection({Name = "Aimbot"})
-AimbotGroup:AddToggle({
-    Name = "Enabled",
-    Flag = "AimbotEnabled",
-    Value = Settings.Aimbot.Enabled and hasMouseMoveRel,
-    Callback = function(s)
-        if not hasMouseMoveRel then
-            game:GetService("StarterGui"):SetCore("SendNotification", {
-                Title = "Aimbot Unavailable",
-                Text = "This executor does not support mousemoverel. Aimbot cannot be enabled.",
-                Duration = 5
-            })
-            return
-        end
-        Settings.Aimbot.Enabled = s
-        if s then
-            startMousePreload()
-            State.InputBeganConnection = UserInputService.InputBegan:Connect(function(i)
-                if i.UserInputType == Enum.UserInputType.MouseButton2 then
-                    State.IsRightClickHeld = true
-                    State.TargetPart = getClosestPlayer()
-                end
-            end)
-            State.InputEndedConnection = UserInputService.InputEnded:Connect(function(i)
-                if i.UserInputType == Enum.UserInputType.MouseButton2 then
-                    State.IsRightClickHeld = false
-                    State.TargetPart = nil
-                end
-            end)
-            State.RenderSteppedConnection = RunService.RenderStepped:Connect(function()
-                if State.IsRightClickHeld and State.TargetPart then
-                    if Settings.Aimbot.WallCheck then
-                        if isVisible(State.TargetPart, true) then
+if hasMouseMoveRel then
+    local AimbotGroup = Tabs.Main:CreateSection({Name = "Aimbot"})
+    AimbotGroup:AddToggle({
+        Name = "Enabled",
+        Flag = "AimbotEnabled",
+        Value = Settings.Aimbot.Enabled,
+        Callback = function(s)
+            Settings.Aimbot.Enabled = s
+            if s then
+                startMousePreload()
+                State.InputBeganConnection = UserInputService.InputBegan:Connect(function(i)
+                    if i.UserInputType == Enum.UserInputType.MouseButton2 then
+                        State.IsRightClickHeld = true
+                        State.TargetPart = getClosestPlayer()
+                    end
+                end)
+                State.InputEndedConnection = UserInputService.InputEnded:Connect(function(i)
+                    if i.UserInputType == Enum.UserInputType.MouseButton2 then
+                        State.IsRightClickHeld = false
+                        State.TargetPart = nil
+                    end
+                end)
+                State.RenderSteppedConnection = RunService.RenderStepped:Connect(function()
+                    if State.IsRightClickHeld and State.TargetPart then
+                        if Settings.Aimbot.WallCheck then
+                            if isVisible(State.TargetPart, true) then
+                                aimAt()
+                            end
+                        else
                             aimAt()
                         end
-                    else
-                        aimAt()
                     end
-                end
-            end)
-        else
-            stopMousePreload()
-            if State.InputBeganConnection then State.InputBeganConnection:Disconnect() end
-            if State.InputEndedConnection then State.InputEndedConnection:Disconnect() end
-            if State.RenderSteppedConnection then State.RenderSteppedConnection:Disconnect() end
+                end)
+            else
+                stopMousePreload()
+                if State.InputBeganConnection then State.InputBeganConnection:Disconnect() end
+                if State.InputEndedConnection then State.InputEndedConnection:Disconnect() end
+                if State.RenderSteppedConnection then State.RenderSteppedConnection:Disconnect() end
+            end
         end
-    end
-})
-AimbotGroup:AddDropdown({ Name = "Hit Part", Flag = "AimbotHitPart", List = {"Head", "Torso"}, Value = Settings.Aimbot.HitPart, Callback = function(v) Settings.Aimbot.HitPart = v end })
-AimbotGroup:AddToggle({ Name = "Wall Check", Flag = "AimbotWallCheck", Value = Settings.Aimbot.WallCheck, Callback = function(s) Settings.Aimbot.WallCheck = s end })
-AimbotGroup:AddToggle({ Name = "Auto Target Switch", Flag = "AimbotAutoTargetSwitch", Value = Settings.Aimbot.AutoTargetSwitch, Callback = function(s) Settings.Aimbot.AutoTargetSwitch = s end })
-AimbotGroup:AddToggle({ Name = "Use Max Distance", Flag = "AimbotMaxDistanceEnabled", Value = Settings.Aimbot.MaxDistance.Enabled, Callback = function(s) Settings.Aimbot.MaxDistance.Enabled = s end })
-AimbotGroup:AddSlider({ Name = "Max Distance", Flag = "AimbotMaxDistance", Value = Settings.Aimbot.MaxDistance.Value, Min = 10, Max = 1000, Rounding = 0, Callback = function(v) Settings.Aimbot.MaxDistance.Value = v end })
-AimbotGroup:AddSlider({ Name = "Strength", Flag = "AimbotEasingStrength", Value = Settings.Aimbot.Easing.Strength, Min = 0.1, Max = 1.5, Decimals = 1, Rounding = 1, Callback = function(v) Settings.Aimbot.Easing.Strength = v updateSensitivity(v) end })
+    })
+    AimbotGroup:AddDropdown({ Name = "Hit Part", Flag = "AimbotHitPart", List = {"Head", "Torso"}, Value = Settings.Aimbot.HitPart, Callback = function(v) Settings.Aimbot.HitPart = v end })
+    AimbotGroup:AddToggle({ Name = "Wall Check", Flag = "AimbotWallCheck", Value = Settings.Aimbot.WallCheck, Callback = function(s) Settings.Aimbot.WallCheck = s end })
+    AimbotGroup:AddToggle({ Name = "Auto Target Switch", Flag = "AimbotAutoTargetSwitch", Value = Settings.Aimbot.AutoTargetSwitch, Callback = function(s) Settings.Aimbot.AutoTargetSwitch = s end })
+    AimbotGroup:AddToggle({ Name = "Use Max Distance", Flag = "AimbotMaxDistanceEnabled", Value = Settings.Aimbot.MaxDistance.Enabled, Callback = function(s) Settings.Aimbot.MaxDistance.Enabled = s end })
+    AimbotGroup:AddSlider({ Name = "Max Distance", Flag = "AimbotMaxDistance", Value = Settings.Aimbot.MaxDistance.Value, Min = 10, Max = 1000, Rounding = 0, Callback = function(v) Settings.Aimbot.MaxDistance.Value = v end })
+    AimbotGroup:AddSlider({ Name = "Strength", Flag = "AimbotEasingStrength", Value = Settings.Aimbot.Easing.Strength, Min = 0.1, Max = 1.5, Decimals = 1, Rounding = 1, Callback = function(v) Settings.Aimbot.Easing.Strength = v updateSensitivity(v) end })
+end
 
 -- ESP UI
 local ESPGroup = Tabs.Visuals:CreateSection({Name = "ESP"})
