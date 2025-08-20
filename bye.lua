@@ -15,11 +15,11 @@ local TweenService = game:GetService("TweenService")
 local lastJumpTime = 0
 local jumpCooldown = 0.8125
 
- game:GetService("StarterGui"):SetCore("SendNotification", {
-        Title = "Join the Server!",
-        Text = "dsc.gg/kaotiksoftworks",
-        Duration = 6
-    })
+game:GetService("StarterGui"):SetCore("SendNotification", {
+    Title = "Join the Server!",
+    Text = "dsc.gg/kaotiksoftworks",
+    Duration = 6
+})
 
 if _G.ScriptIsRunning then
     game:GetService("StarterGui"):SetCore("SendNotification", {
@@ -30,6 +30,17 @@ if _G.ScriptIsRunning then
     return
 end
 _G.ScriptIsRunning = true
+
+-- // Check for mousemoverel support \\
+local hasMouseMoveRel = type(mousemoverel) == "function"
+if not hasMouseMoveRel then
+    game:GetService("StarterGui"):SetCore("SendNotification", {
+        Title = "Aimbot Disabled",
+        Text = "This executor does not support mousemoverel. Aimbot functionality is disabled.",
+        Duration = 6
+    })
+    Settings.Aimbot.Enabled = false
+end
 
 -- // Settings Configuration \\
 local Settings = {
@@ -286,7 +297,11 @@ local function getClosestPlayer()
     return closest
 end
 
-local function safeMouseMoveRel(x, y) pcall(mousemoverel, x, y) end
+local function safeMouseMoveRel(x, y)
+    if hasMouseMoveRel then
+        pcall(mousemoverel, x, y)
+    end
+end
 
 local function preloadMouse()
     local t = tick()
@@ -297,15 +312,20 @@ local function preloadMouse()
 end
 
 local function startMousePreload()
+    if not hasMouseMoveRel then return end
     if State.MousePreload.Active then return end
     State.MousePreload.Active = true
     State.MousePreload.Connection = RunService.Heartbeat:Connect(preloadMouse)
 end
 
 local function stopMousePreload()
+    if not hasMouseMoveRel then return end
     if not State.MousePreload.Active then return end
     State.MousePreload.Active = false
-    if State.MousePreload.Connection then State.MousePreload.Connection:Disconnect() State.MousePreload.Connection = nil end
+    if State.MousePreload.Connection then
+        State.MousePreload.Connection:Disconnect()
+        State.MousePreload.Connection = nil
+    end
 end
 
 local function aimAt()
@@ -533,20 +553,53 @@ CrosshairGroup:AddSlider({ Name = "Transparency", Flag = "CrosshairTransparency"
 
 -- Aimbot UI
 local AimbotGroup = Tabs.Main:CreateSection({Name = "Aimbot"})
-AimbotGroup:AddToggle({ Name = "Enabled", Flag = "AimbotEnabled", Value = Settings.Aimbot.Enabled, Callback = function(s)
-    Settings.Aimbot.Enabled = s
-    if s then
-        startMousePreload()
-        State.InputBeganConnection = UserInputService.InputBegan:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton2 then State.IsRightClickHeld = true State.TargetPart = getClosestPlayer() end end)
-        State.InputEndedConnection = UserInputService.InputEnded:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton2 then State.IsRightClickHeld = false State.TargetPart = nil end end)
-        State.RenderSteppedConnection = RunService.RenderStepped:Connect(function() if State.IsRightClickHeld and State.TargetPart then if Settings.Aimbot.WallCheck then if isVisible(State.TargetPart, true) then aimAt() end else aimAt() end end end)
-    else
-        stopMousePreload()
-        if State.InputBeganConnection then State.InputBeganConnection:Disconnect() end
-        if State.InputEndedConnection then State.InputEndedConnection:Disconnect() end
-        if State.RenderSteppedConnection then State.RenderSteppedConnection:Disconnect() end
+AimbotGroup:AddToggle({
+    Name = "Enabled",
+    Flag = "AimbotEnabled",
+    Value = Settings.Aimbot.Enabled and hasMouseMoveRel,
+    Callback = function(s)
+        if not hasMouseMoveRel then
+            game:GetService("StarterGui"):SetCore("SendNotification", {
+                Title = "Aimbot Unavailable",
+                Text = "This executor does not support mousemoverel. Aimbot cannot be enabled.",
+                Duration = 5
+            })
+            return
+        end
+        Settings.Aimbot.Enabled = s
+        if s then
+            startMousePreload()
+            State.InputBeganConnection = UserInputService.InputBegan:Connect(function(i)
+                if i.UserInputType == Enum.UserInputType.MouseButton2 then
+                    State.IsRightClickHeld = true
+                    State.TargetPart = getClosestPlayer()
+                end
+            end)
+            State.InputEndedConnection = UserInputService.InputEnded:Connect(function(i)
+                if i.UserInputType == Enum.UserInputType.MouseButton2 then
+                    State.IsRightClickHeld = false
+                    State.TargetPart = nil
+                end
+            end)
+            State.RenderSteppedConnection = RunService.RenderStepped:Connect(function()
+                if State.IsRightClickHeld and State.TargetPart then
+                    if Settings.Aimbot.WallCheck then
+                        if isVisible(State.TargetPart, true) then
+                            aimAt()
+                        end
+                    else
+                        aimAt()
+                    end
+                end
+            end)
+        else
+            stopMousePreload()
+            if State.InputBeganConnection then State.InputBeganConnection:Disconnect() end
+            if State.InputEndedConnection then State.InputEndedConnection:Disconnect() end
+            if State.RenderSteppedConnection then State.RenderSteppedConnection:Disconnect() end
+        end
     end
-end })
+})
 AimbotGroup:AddDropdown({ Name = "Hit Part", Flag = "AimbotHitPart", List = {"Head", "Torso"}, Value = Settings.Aimbot.HitPart, Callback = function(v) Settings.Aimbot.HitPart = v end })
 AimbotGroup:AddToggle({ Name = "Wall Check", Flag = "AimbotWallCheck", Value = Settings.Aimbot.WallCheck, Callback = function(s) Settings.Aimbot.WallCheck = s end })
 AimbotGroup:AddToggle({ Name = "Auto Target Switch", Flag = "AimbotAutoTargetSwitch", Value = Settings.Aimbot.AutoTargetSwitch, Callback = function(s) Settings.Aimbot.AutoTargetSwitch = s end })
